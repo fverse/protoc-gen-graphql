@@ -26,3 +26,5 @@ go.work.sum
 
 tmp
 /logs/codegen.log
+out
+protoc-gen-graphql

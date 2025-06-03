@@ -18,7 +18,7 @@ type Plugin struct {
 	Response *pluginpb.CodeGeneratorResponse
 
 	args   *Args
-	logger *Logger
+	Logger *Logger
 
 	schema []*Schema
 }
@@ -33,14 +33,13 @@ func (plugin *Plugin) SetSupportOptionalField() {
 func New(request *pluginpb.CodeGeneratorRequest) *Plugin {
 	logger := NewLogger()
 	args := ParseArgs(request.GetParameter(), logger)
-
-	logger.Log("files: %v", request.FileToGenerate)
+	logger.Log("args2: %+v", args)
 
 	return &Plugin{
 		Request:  request,
 		Response: new(pluginpb.CodeGeneratorResponse),
 		args:     args,
-		logger:   logger,
+		Logger:   logger,
 	}
 }
 

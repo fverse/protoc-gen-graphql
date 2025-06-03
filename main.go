@@ -30,6 +30,8 @@ func main() {
 
 	plugin.SetSupportOptionalField()
 
+	defer plugin.Info("Codegen completed")
+
 	output, err := proto.Marshal(plugin.Response)
 	if err != nil {
 		plugin.Error(err, "error serializing output")

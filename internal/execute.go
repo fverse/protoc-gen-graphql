@@ -29,9 +29,7 @@ func (plugin *Plugin) processProtoFiles() {
 		if !plugin.isFileExplicit(protoFile) {
 			continue
 		}
-		schema := CreateSchema(protoFile)
-
-		schema.args = plugin.args
+		schema := CreateSchema(plugin, protoFile)
 		plugin.schema = append(plugin.schema, schema)
 	}
 }
@@ -39,6 +37,7 @@ func (plugin *Plugin) processProtoFiles() {
 func (plugin *Plugin) generateOutput() {
 	if plugin.args.CombineOutput {
 		plugin.generateCombinedOutput()
+		return
 	}
 	plugin.generateSeparateOutputs()
 }
@@ -46,6 +45,7 @@ func (plugin *Plugin) generateOutput() {
 func (plugin *Plugin) generateCombinedOutput() {
 	var combinedSchema = new(Schema)
 	combinedSchema.Builder = new(strings.Builder)
+	combinedSchema.args = plugin.args
 
 	for _, schema := range plugin.schema {
 		combinedSchema.objectTypes = append(combinedSchema.objectTypes, schema.objectTypes...)

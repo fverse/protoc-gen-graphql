@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/fverse/protoc-graphql/internal/descriptor"
+	"github.com/fverse/protoc-graphql/internal/syntax"
 	"github.com/fverse/protoc-graphql/options"
 	"github.com/fverse/protoc-graphql/pkg/utils"
 	"google.golang.org/protobuf/proto"
@@ -16,10 +17,12 @@ type Schema struct {
 	*strings.Builder
 
 	// Plugin's parsed command line arguments
-	args *Args
+	args   *Args
+	Logger *Logger
 
-	protoFile *descriptorpb.FileDescriptorProto
-	fileName  *string
+	protoFile   *descriptorpb.FileDescriptorProto
+	packageName *string
+	fileName    *string
 
 	objectTypes []*descriptor.ObjectType
 	enums       []*descriptor.Enumeration
@@ -38,7 +41,6 @@ func keepCase(fieldOptions *descriptorpb.FieldOptions) bool {
 }
 
 // Constructs the Object types from message types and fills the schema.objectTypes
-// Since
 func (schema *Schema) makeObjectTypes(messages []*descriptorpb.DescriptorProto) {
 	for _, message := range messages {
 		if len(message.Field) > 0 {
@@ -84,7 +86,7 @@ func generateFields(fields []*descriptorpb.FieldDescriptorProto) []*descriptor.F
 		f.GetType(field)
 
 		// Sets wether the field is optional or not
-		f.IsOptional(field)
+		f.IsRequired(field)
 
 		// Sets wether the field is required or not
 		f.IsRepeated(field)
@@ -97,36 +99,173 @@ func generateFields(fields []*descriptorpb.FieldDescriptorProto) []*descriptor.F
 	return result
 }
 
-// Constructs mutations from service methods and fills the schema.mutations
-func (schema *Schema) Mutations() {
+func getMethodOptions(method *descriptorpb.MethodDescriptorProto) *options.MethodOptions {
+	opts := method.GetOptions()
+	if proto.HasExtension(opts, options.E_Method) {
+		ext := proto.GetExtension(opts, options.E_Method)
+		return ext.(*options.MethodOptions)
+	}
+	return &options.MethodOptions{}
+}
+
+func getGqlOutputType(outputType string, mo *string, packageName *string) *string {
+	if outputType != "" {
+		outputType = utils.UppercaseFirst(outputType)
+		return &outputType
+	}
+	outputType = strings.TrimPrefix(*mo, "."+*packageName+".")
+	return &outputType
+}
+
+func isBoolean(t *string) bool {
+	return strings.Contains(*t, "Bool")
+}
+
+func isEmpty(t *string) bool {
+	// query.Input.Type == empty || query.Input.Type == "Empty" || query.Input.Type == "empty"
+	return *t == "Empty"
+}
+
+func isArray(t *options.GqlInput, length int) bool {
+	f := t.Type[:1]
+	l := t.Type[length-1:]
+	return f == "[" && l == "]"
+}
+
+func parseType(input *options.GqlInput) {
+	if input.Type == "" {
+		return
+	}
+
+	if isArray(input, len(input.Type)) {
+		input.Array = true
+		input.Type = utils.UppercaseFirst(input.Type[1 : len(input.Type)-1])
+	} else {
+		input.Type = utils.UppercaseFirst(input.Type)
+	}
+
+	if isPrimitive(&input.Type) {
+		input.Primitive = true
+		if input.Type == "Bool" {
+			input.Type = "Boolean"
+		}
+	} else if isEmpty(&input.Type) {
+		input.Empty = true
+	}
+}
+
+func isPrimitive(t *string) bool {
+	switch *t {
+	case "String", "Boolean", "Bool", "Int", "Float":
+		return true
+	default:
+		return false
+	}
+}
+
+func getGqlInputParam(input *options.GqlInput) string {
+	if param := input.GetParam(); param != "" {
+		return param
+	}
+	return string(syntax.Input)
+}
+
+func getGqlInputType(input *options.GqlInput, mi *string, packageName *string) *options.GqlInput {
+	if input == nil {
+		input = &options.GqlInput{
+			Type: "I" + strings.TrimPrefix(*mi, "."+*packageName+"."),
+		}
+	} else if input.Type != "" {
+		parseType(input)
+		if !input.Primitive && !input.Empty {
+			input.Type = "I" + input.Type
+		} else if input.Array {
+			input.Type = "[" + input.Type + "]"
+		} else {
+			input.Type = "I" + strings.TrimPrefix(*mi, "."+*packageName+".")
+		}
+	} else {
+		input.Type = "I" + strings.TrimPrefix(*mi, "."+*packageName+".")
+	}
+
+	input.Param = getGqlInputParam(input)
+	return input
+}
+
+// Check the compiler target and the method's target
+func checkCompilerTarget(compilerTarget *string, options *options.MethodOptions) bool {
+	return *compilerTarget == utils.CastUit32ToString(options.Target) || utils.CompareStringInt(*compilerTarget, 3)
+}
+
+// Check if the compiler target is not the same as the method's target
+func skipMethod(compilerTarget *string, options *options.MethodOptions) bool {
+	return options.Skip || !checkCompilerTarget(compilerTarget, options) && options.Target != 3
 }
 
 // Constructs the Object types from message types and fills the schema.objectTypes
-func (schema *Schema) Queries() {
+func (schema *Schema) AddQueriesAndMutations() {
 	for _, service := range schema.protoFile.Service {
 		for _, method := range service.Method {
-			query := new(descriptor.Query)
-			query.Name = method.Name
-			schema.queries = append(schema.queries, query)
+
+			// NewLogger().Log("target: %v", schema.args.Target)
+			methodOptions := getMethodOptions(method)
+
+			schema.Logger.Log("methodOptions: %v", methodOptions)
+
+			schema.Logger.Log("target: %s", schema.args.Target)
+
+			if skipMethod(&schema.args.Target, methodOptions) {
+				continue
+			}
+
+			if methodOptions.Kind == "mutation" || methodOptions.Kind == "Mutation" {
+				mutation := new(descriptor.Mutation)
+				mutation.Name = method.Name
+				mutation.Input = getGqlInputType(methodOptions.GqlInput, method.InputType, schema.packageName)
+				mutation.Payload = getGqlOutputType(methodOptions.GqlOutput, method.OutputType, schema.packageName)
+				schema.mutations = append(schema.mutations, mutation)
+			} else {
+				query := new(descriptor.Query)
+				query.Name = method.Name
+				query.Input = getGqlInputType(methodOptions.GqlInput, method.InputType, schema.packageName)
+				query.Payload = getGqlOutputType(methodOptions.GqlOutput, method.OutputType, schema.packageName)
+				schema.queries = append(schema.queries, query)
+			}
 		}
 	}
 }
 
+// Construct enums
+func (schema *Schema) Enums() {
+	for _, enumType := range schema.protoFile.EnumType {
+		enum := new(descriptor.Enumeration)
+		enum.Name = enumType.Name
+		for _, value := range enumType.Value {
+			enum.Values = append(enum.Values, enumValues(value))
+		}
+		schema.enums = append(schema.enums, enum)
+	}
+}
+
 // Creates new Schema
-func CreateSchema(protoFile *descriptorpb.FileDescriptorProto) *Schema {
+func CreateSchema(plugin *Plugin, protoFile *descriptorpb.FileDescriptorProto) *Schema {
 	schema := new(Schema)
 	schema.Builder = new(strings.Builder)
 	schema.protoFile = protoFile
+	schema.args = plugin.args
+	schema.Logger = plugin.Logger
 
-	// Crete the filename for the output file
+	// get package name
+	schema.packageName = protoFile.Package
+
 	schema.FileName(protoFile.Name)
 
 	// Construct Object types
 	schema.makeObjectTypes(protoFile.MessageType)
 
-	schema.Queries()
+	schema.Enums()
 
-	// TODO: Generate Input types
+	schema.AddQueriesAndMutations()
 	return schema
 }
 

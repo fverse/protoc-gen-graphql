@@ -1,0 +1,337 @@
+syntax = "proto3";
+package dieture;
+
+option go_package = "/protobuf";
+
+import "google/protobuf/descriptor.proto";
+import "protobuf/options/options.proto";
+
+message Empty {}
+
+message NamePayload {
+    string EN = 1 [(keep_case) = true]; 
+    string AR  = 2 [(keep_case) = false];
+}
+
+message Phone {
+//   option (input) = true;
+//   option (method).protected = false;
+  string prefix = 1; 
+  string number  = 2;
+}
+
+enum DeviceType {
+  DEVICE_TYPE_UNSPECIFIED = 0;
+  DEVICE_TYPE_ANDROID = 1;
+  DEVICE_TYPE_IOS = 2;
+}
+
+message Request {
+    optional string first_name = 1;
+    string last_Name = 2;
+    DeviceType device = 3; 
+    Nested nested = 4;
+    Nested2 nested2 = 5;
+    Nested3 nested3 = 6;
+    string _id = 7;
+
+    // message Nested3 {
+    //     bool oks = 1;
+    // }
+}
+
+message Nested3 {
+  bool oks = 1;
+}
+
+message OrderRequest {
+    optional string firstName = 1;
+    string last_Name = 2;
+    DeviceType device = 3; 
+    Nested nested = 4;
+    Nested2 nested2 = 5;
+    Nested3 nested3 = 6;
+    string _id = 7;
+    DeviceType vice = 8;
+    
+    enum DeviceType {
+      DEVICE_TYPE_UNSPECIFIED = 0;
+      DEVICE_TYPE_ANDROID = 1;
+      DEVICE_TYPE_IOS = 2;
+    }
+}
+
+// if input type: 
+//    put input before the {
+// else: 
+//    put type before {
+
+// case 1: 
+
+message Nested2 {
+    string u = 1;
+}
+
+message Nested {
+    string v = 1;
+}
+
+message Response {
+    string _id = 1;
+    string name = 2 [(required) = true];
+    Phone mob = 3;
+    float price = 4;
+    int32 year = 5;
+    bool oks = 6;
+    Nested nested = 7;
+    repeated string roles = 8;
+}
+
+message OrderResponse {
+    string _id = 1;
+    string name = 2 [(required) = true];
+    Phone mob = 3;
+    float price = 4;
+    int32 year = 5;
+    bool oks = 6;
+    Nested nested = 7;
+    repeated string roles = 8;
+}
+
+// message PhoneInput {
+//     option (input) = true;
+//     string prefix = 1; 
+//     string number  = 2;
+// }
+
+// message LoginWithPhoneRequest {
+//     option (input) = true;
+//     PhoneInput phone = 1 [(required) = true]; 
+//     string device = 2;
+// }
+// message RewardsActionPayload {
+//     int32 points = 1;               
+//     int32 validityInDays = 2;       
+//     string RewardsActionType = 3; 
+//     bool isReusable = 4;            
+//     bool isAmountBased = 5;         
+//   }
+
+// message Country {
+//     string _id = 1;
+//     string name= 2; 
+//     string currency= 3;
+//     bool is_active= 4;
+//     string flag= 5;
+//     string prefix= 6;
+//     string code= 7;
+//     float one_point_value= 8;
+//     string primary_color= 9;
+//     string secondary_color= 10;
+//     repeated RewardsActionPayload rewardsAction = 11;
+//     // ApplyChangesBeforeInput applyChangesAfter = 12;
+
+// }
+
+// message GetActiveCountriesResponse {
+//     repeated Country data = 1;
+// }
+
+// message LoginWithPhoneResponse {
+//     bool register = 1;
+//     string message = 2;   
+// }
+
+// message Baz {
+//     bool y = 1;
+// }
+
+// message Bar {          
+//     bool oks = 1;   
+//     Baz baaz = 2;    
+// }                      
+
+// message Foo {          // input FooInput {
+//    Bar baar = 1;       //   baar: BarInput
+// }                      // }
+
+// message HelloRequest { // type HelloRequest {
+//   string x = 1;        //   x: String
+//   Foo phoo = 2; 
+//   repeated Bar repetedBar = 3; 
+//   Response res = 4;
+//   Request req = 5;
+//   //   phoo FooInput
+// }                      // }
+
+// message HelloResponse {
+//     string y = 1;
+//     repeated Nested repeatedNested = 2;
+//     Foo phoo = 3;
+//     Response res = 4;
+//     Request req = 5;
+// }
+
+message Id {
+    string _id = 1;
+}
+
+message Address {
+    string pincode = 1;
+}
+
+message User {
+    string name = 1;
+    string age = 2;
+    Address address = 3;
+}
+
+message UserResponse {
+  User user = 1;
+}
+
+// message GetUsersResponse {
+//     repeated User data = 1;
+// }
+
+enum GeomertyType {
+    POSITION = 0;
+    POINT = 1;
+    Polygon = 2;
+    MULTIPOINT = 3;
+    LINESTRING = 4;
+    MULTILINESTRING = 5;
+    MULTIPOLYGON = 6;
+    GEOMETRYCOLLECTION = 7;
+    ANTIMERIDIAN_CUTTING = 8;
+    UNCERTAINTY_AND_PRECISION = 9;
+  }
+  
+  message PolygonPayload {
+    GeomertyType type = 1;
+    repeated CoordinateList coordinates = 2;
+  
+    message CoordinateList {
+      repeated Coordinate coordinate = 1;
+  
+      message Coordinate {
+        repeated double point = 1;
+      }
+    }
+  }
+
+  message FindByIdRequest {
+    string id = 1 [(required) = true];
+  }
+
+service HelloService {
+    rpc GetHello(PolygonPayload) returns (Empty) {
+        option (method) = {
+            kind: "query"
+            target: 3 // 1 means admin api gateway. 2 means cleint api gateway. 3 means both
+            gql_input: {
+              optional: true
+           };
+        };
+    }
+    rpc GetOrder(OrderRequest) returns (OrderResponse) {
+        // option (method) = {
+        //     kind: "Mutation"
+        //     target: 2 
+        //     protected: true
+        //     gql_input: {
+        //         type: "User"
+        //     };
+        //     // gql_output: "Empty"
+        // };
+        // option (method) = {
+        //     kind: "mutation"
+        //     target: 2 
+        //     gql_input: {
+        //       param: "reset"
+        //       type: "[User]"
+        //     }
+        //     gql_output: "boolean"
+        //   };
+        option (method) = {
+          kind: "query"
+          skip: false
+          target: 3
+          // protected: true
+          gql_output: "[AllergenGroupPayload]"
+          gql_input: {
+            // type: "empty"
+            optional: false
+        };
+      };
+    }
+
+    rpc CreateUser(Request) returns (Response) {
+        option (method) = {
+            kind: "mutation"
+            target: 3
+        };
+    }
+
+    rpc GetUserById(Id) returns (UserResponse) {
+        option (method) = {
+            kind: "mutation"
+            skip: false
+            target: 3
+            // protected: true
+            // permission: "USER_VIEW"
+            gql_input: {
+                param: "id"
+                // optional: false
+            };
+            gql_output: "[User]"
+        };
+    }
+
+    // rpc GetUsers(Empty) returns (GetUsersResponse) {
+    //     option (method) = {
+    //         kind: "query"
+    //         target: 2
+    //         protected: true
+    //         permission: "USER_VIEW"
+    //         gql_output: "[User]"
+    //     };
+    // }
+
+    // getUserById(id: String!): User
+
+//     rpc LoginWithPhone(LoginWithPhoneRequest) returns (LoginWithPhoneResponse) {
+//         option (method).type = "mutation";
+//         option (method).target = 2;
+//         option (method).protected = false;
+//     }
+
+//     rpc GetActiveCountries(Empty) returns (GetActiveCountriesResponse){
+//         option (method).type = "query";
+//         option (method).target = 2;
+//         option (method).protected = false;
+    }
+
+// }
+
+// service UserService {
+
+// }
+
+// service ProductService {
+
+// }
+
+message LeadsPayload {
+    enum LeadStatus {
+      CONTACTED = 0;
+      INFORMATION_REQUIRED = 1;
+      CLOSED = 2;
+      CONVERTED = 3;
+      PENDING = 4;
+      UNATTENDED = 5;
+    }
+    string _id = 1;
+    string referenceNumber = 2;
+    LeadStatus leadStatus = 3; 
+}

@@ -41,8 +41,6 @@ func ParseArgs(params string, logger *Logger) *Args {
 			v = pair[1]
 		}
 
-		logger.Log("k: %s, v: %s", k, v)
-
 		switch k {
 		case "target":
 			args.Target = v

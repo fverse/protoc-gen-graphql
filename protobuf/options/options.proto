@@ -1,5 +1,5 @@
 syntax = "proto3";
-package protoc_graphql;
+package dieture;
 
 option go_package = "/options";
 
@@ -12,6 +12,10 @@ extend google.protobuf.MethodOptions {
 message GqlInput {
   string param = 50031;
   string type = 50032;
+  bool optional = 50033;
+  bool primitive = 50034;
+  bool array = 50035;
+  bool empty = 50036;
 }
 
 message MethodOptions {
