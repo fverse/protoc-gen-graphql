@@ -20,7 +20,7 @@ message GqlInput {
 
 message MethodOptions {
   string kind = 50001;
-  uint32 target = 50002; // 0, 1, 2, 3
+  string target = 50002; // e.g., "internal". "*" for all
   GqlInput gql_input = 50003;
   string gql_output = 50004;
   bool skip = 50005;

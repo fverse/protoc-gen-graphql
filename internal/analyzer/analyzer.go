@@ -1,8 +1,6 @@
 package analyzer
 
 import (
-	"strconv"
-
 	"github.com/fverse/protoc-graphql/options"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/descriptorpb"
@@ -178,16 +176,12 @@ func shouldIncludeMethod(cliTarget string, methodOptions *options.MethodOptions)
 		return false
 	}
 
-	// CLI target "3" or method target 3 acts as wildcard
-	if cliTarget == "3" || methodOptions.Target == 3 {
+	// "all" or "*" acts as wildcard (matches everything)
+	if cliTarget == "all" || cliTarget == "*" || methodOptions.Target == "all" || methodOptions.Target == "*" {
 		return true
 	}
 
-	return cliTarget == castUint32ToString(methodOptions.Target)
-}
-
-func castUint32ToString(val uint32) string {
-	return strconv.FormatUint(uint64(val), 10)
+	return cliTarget == methodOptions.Target
 }
 
 func (ta *TypeAnalyzer) IsTypeReachable(typeName string) bool {

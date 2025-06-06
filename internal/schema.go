@@ -222,23 +222,15 @@ func getGqlInputType(input *options.GqlInput, mi *string, packageName *string) *
 }
 
 // checkCompilerTarget checks if the CLI target matches the method's target.
-// Returns true if:
-// - CLI target matches method target exactly, OR
-// - CLI target is "3" (wildcard - matches all methods)
 func checkCompilerTarget(compilerTarget *string, options *options.MethodOptions) bool {
-	// CLI target "3" matches all methods (Req 5.2)
-	if utils.CompareStringInt(*compilerTarget, 3) {
+	// "all" or "*" acts as wildcard
+	if *compilerTarget == "all" || *compilerTarget == "*" {
 		return true
 	}
-	// Exact match: CLI target equals method target
-	return *compilerTarget == utils.CastUit32ToString(options.Target)
+	return *compilerTarget == options.Target
 }
 
 // skipMethod determines if a method should be skipped based on target matching.
-// Returns false (don't skip) if:
-// - Method is not marked to skip, AND
-// - CLI target matches method target (via checkCompilerTarget), OR
-// - Method target is 3 (wildcard - matches any CLI target)
 func skipMethod(compilerTarget *string, options *options.MethodOptions) bool {
 	// Skip if method is explicitly marked to skip
 	if options.Skip {
@@ -248,8 +240,8 @@ func skipMethod(compilerTarget *string, options *options.MethodOptions) bool {
 	if checkCompilerTarget(compilerTarget, options) {
 		return false
 	}
-	// Don't skip if method target is 3 (wildcard - matches any CLI target) (Req 5.3)
-	if options.Target == 3 {
+	// Method target "all" or "*" matches any CLI target
+	if options.Target == "all" || options.Target == "*" {
 		return false
 	}
 	// Skip: no match
