@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fverse/protoc-graphql/internal/analyzer"
 	"github.com/fverse/protoc-graphql/internal/descriptor"
 	"github.com/fverse/protoc-graphql/internal/syntax"
 	"github.com/fverse/protoc-graphql/options"
@@ -24,6 +25,9 @@ type Schema struct {
 	packageName *string
 	fileName    *string
 
+	// Type analyzer for dependency-based filtering
+	typeAnalyzer *analyzer.TypeAnalyzer
+
 	objectTypes []*descriptor.ObjectType
 	enums       []*descriptor.Enumeration
 	inputTypes  []*descriptor.InputType
@@ -42,7 +46,29 @@ func keepCase(fieldOptions *descriptorpb.FieldOptions) bool {
 
 // Constructs the Object types from message types and fills the schema.objectTypes
 func (schema *Schema) makeObjectTypes(messages []*descriptorpb.DescriptorProto) {
+	schema.makeObjectTypesWithPrefix(messages, "")
+}
+
+// makeObjectTypesWithPrefix constructs object types with a name prefix for nested types
+func (schema *Schema) makeObjectTypesWithPrefix(messages []*descriptorpb.DescriptorProto, prefix string) {
 	for _, message := range messages {
+		// Build the fully qualified name for reachability check
+		var fullName string
+		if prefix == "" {
+			if schema.packageName != nil && *schema.packageName != "" {
+				fullName = "." + *schema.packageName + "." + message.GetName()
+			} else {
+				fullName = "." + message.GetName()
+			}
+		} else {
+			fullName = prefix + "." + message.GetName()
+		}
+
+		// Check if this type is reachable before processing
+		if !schema.typeAnalyzer.IsTypeReachable(fullName) {
+			continue
+		}
+
 		if len(message.Field) > 0 {
 			objectType := new(descriptor.ObjectType)
 			objectType.Name = message.Name
@@ -50,19 +76,22 @@ func (schema *Schema) makeObjectTypes(messages []*descriptorpb.DescriptorProto) 
 			// Generate type fields
 			objectType.Fields = generateFields(message.Field)
 
-			// Construct embedded object types
+			// Construct embedded object types (with updated prefix)
 			for _, nested := range message.NestedType {
-				schema.makeObjectTypes([]*descriptorpb.DescriptorProto{nested})
+				schema.makeObjectTypesWithPrefix([]*descriptorpb.DescriptorProto{nested}, fullName)
 			}
 
-			// Construct embedded enums
+			// Construct embedded enums (only if reachable)
 			for _, enumType := range message.EnumType {
-				enum := new(descriptor.Enumeration)
-				enum.Name = enumType.Name
-				for _, value := range enumType.Value {
-					enum.Values = append(enum.Values, enumValues(value))
+				enumFullName := fullName + "." + enumType.GetName()
+				if schema.typeAnalyzer.IsEnumReachable(enumFullName) {
+					enum := new(descriptor.Enumeration)
+					enum.Name = enumType.Name
+					for _, value := range enumType.Value {
+						enum.Values = append(enum.Values, enumValues(value))
+					}
+					schema.enums = append(schema.enums, enum)
 				}
-				schema.enums = append(schema.enums, enum)
 			}
 			schema.objectTypes = append(schema.objectTypes, objectType)
 		}
@@ -192,14 +221,39 @@ func getGqlInputType(input *options.GqlInput, mi *string, packageName *string) *
 	return input
 }
 
-// Check the compiler target and the method's target
+// checkCompilerTarget checks if the CLI target matches the method's target.
+// Returns true if:
+// - CLI target matches method target exactly, OR
+// - CLI target is "3" (wildcard - matches all methods)
 func checkCompilerTarget(compilerTarget *string, options *options.MethodOptions) bool {
-	return *compilerTarget == utils.CastUit32ToString(options.Target) || utils.CompareStringInt(*compilerTarget, 3)
+	// CLI target "3" matches all methods (Req 5.2)
+	if utils.CompareStringInt(*compilerTarget, 3) {
+		return true
+	}
+	// Exact match: CLI target equals method target
+	return *compilerTarget == utils.CastUit32ToString(options.Target)
 }
 
-// Check if the compiler target is not the same as the method's target
+// skipMethod determines if a method should be skipped based on target matching.
+// Returns false (don't skip) if:
+// - Method is not marked to skip, AND
+// - CLI target matches method target (via checkCompilerTarget), OR
+// - Method target is 3 (wildcard - matches any CLI target)
 func skipMethod(compilerTarget *string, options *options.MethodOptions) bool {
-	return options.Skip || !checkCompilerTarget(compilerTarget, options) && options.Target != 3
+	// Skip if method is explicitly marked to skip
+	if options.Skip {
+		return true
+	}
+	// Don't skip if CLI target matches method target
+	if checkCompilerTarget(compilerTarget, options) {
+		return false
+	}
+	// Don't skip if method target is 3 (wildcard - matches any CLI target) (Req 5.3)
+	if options.Target == 3 {
+		return false
+	}
+	// Skip: no match
+	return true
 }
 
 // Constructs the Object types from message types and fills the schema.objectTypes
@@ -235,9 +289,22 @@ func (schema *Schema) AddQueriesAndMutations() {
 	}
 }
 
-// Construct enums
+// Construct enums (only reachable ones)
 func (schema *Schema) Enums() {
 	for _, enumType := range schema.protoFile.EnumType {
+		// Build fully qualified name for reachability check
+		var fullName string
+		if schema.packageName != nil && *schema.packageName != "" {
+			fullName = "." + *schema.packageName + "." + enumType.GetName()
+		} else {
+			fullName = "." + enumType.GetName()
+		}
+
+		// Check if this enum is reachable before processing
+		if !schema.typeAnalyzer.IsEnumReachable(fullName) {
+			continue
+		}
+
 		enum := new(descriptor.Enumeration)
 		enum.Name = enumType.Name
 		for _, value := range enumType.Value {
@@ -259,6 +326,13 @@ func CreateSchema(plugin *Plugin, protoFile *descriptorpb.FileDescriptorProto) *
 	schema.packageName = protoFile.Package
 
 	schema.FileName(protoFile.Name)
+
+	// Create type analyzer for dependency-based filtering
+	// Pass all proto files for cross-file type resolution
+	schema.typeAnalyzer = analyzer.NewTypeAnalyzer(plugin.Request.ProtoFile)
+
+	// Analyze RPC dependencies based on target
+	schema.typeAnalyzer.AnalyzeRPCDependencies(protoFile.Service, schema.args.Target)
 
 	// Construct Object types
 	schema.makeObjectTypes(protoFile.MessageType)
