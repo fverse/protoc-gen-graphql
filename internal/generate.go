@@ -8,6 +8,8 @@ import (
 	"github.com/fverse/protoc-graphql/pkg/utils"
 )
 
+// generateType generates a GraphQL output type definition
+// Only generates GraphQL `type` for output-reachable messages
 func (schema *Schema) generateType(object *descriptor.ObjectType) {
 	schema.WriteTypeName(syntax.ObjectType, object.Name)
 
@@ -37,11 +39,14 @@ func (schema *Schema) generateType(object *descriptor.ObjectType) {
 	}
 	schema.Write(string(syntax.RBrace))
 	schema.NewLine(2)
+}
 
-	// Generate input type
-	schema.WriteString(fmt.Sprintf("input I%s {\n", *object.Name))
+// generateInputType generates a GraphQL input type definition
+// Only generates GraphQL `input` for input-reachable messages
+func (schema *Schema) generateInputType(inputType *descriptor.InputType) {
+	schema.WriteString(fmt.Sprintf("input I%s {\n", *inputType.Name))
 
-	for _, field := range object.Fields {
+	for _, field := range inputType.Fields {
 		schema.Space(2)
 		schema.Write(*field.Name + string(syntax.Colon))
 		schema.Space()
@@ -74,6 +79,14 @@ func (schema *Schema) generateType(object *descriptor.ObjectType) {
 func (schema *Schema) generateTypes() {
 	for _, object := range schema.objectTypes {
 		schema.generateType(object)
+	}
+}
+
+// GenerateInputTypes generates GraphQL input type definitions
+// Only generates GraphQL `input` for input-reachable messages
+func (schema *Schema) generateInputTypes() {
+	for _, inputType := range schema.inputTypes {
+		schema.generateInputType(inputType)
 	}
 }
 
@@ -140,8 +153,11 @@ func (schema *Schema) generate() {
 	// Write the header content to the string builder
 	schema.WriteHeader()
 
-	// Generate types
+	// Generate output types )
 	schema.generateTypes()
+
+	// Generate input types
+	schema.generateInputTypes()
 
 	// Generate enums
 	schema.generateEnums()
