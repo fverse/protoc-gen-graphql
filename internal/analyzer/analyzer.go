@@ -118,53 +118,6 @@ func (ta *TypeAnalyzer) RegisterEnumsFromFile(enums []*descriptorpb.EnumDescript
 	}
 }
 
-// MarkTypeReachable marks a type as reachable in both input and output contexts.
-// This is kept for backward compatibility. For context-specific marking,
-// use MarkTypeReachableAsInput or MarkTypeReachableAsOutput.
-func (ta *TypeAnalyzer) MarkTypeReachable(typeName string) {
-	resolvedName := ta.ResolveTypeName(typeName)
-
-	// Check if already reachable in both contexts
-	if (ta.inputReachableTypes[resolvedName] && ta.outputReachableTypes[resolvedName]) ||
-		(ta.inProgressInput[resolvedName] && ta.inProgressOutput[resolvedName]) {
-		return
-	}
-
-	descriptor, exists := ta.typeRegistry[resolvedName]
-	if !exists {
-		return
-	}
-
-	ta.inProgressInput[resolvedName] = true
-	ta.inProgressOutput[resolvedName] = true
-	ta.inputReachableTypes[resolvedName] = true
-	ta.outputReachableTypes[resolvedName] = true
-
-	for _, nested := range descriptor.NestedType {
-		nestedName := resolvedName + "." + nested.GetName()
-		ta.MarkTypeReachable(nestedName)
-	}
-
-	for _, enum := range descriptor.EnumType {
-		enumName := resolvedName + "." + enum.GetName()
-		ta.reachableEnums[enumName] = true
-	}
-
-	for _, field := range descriptor.Field {
-		if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_MESSAGE {
-			ta.MarkTypeReachable(field.GetTypeName())
-		}
-
-		if field.GetType() == descriptorpb.FieldDescriptorProto_TYPE_ENUM {
-			resolvedEnumName := ta.ResolveEnumName(field.GetTypeName())
-			ta.reachableEnums[resolvedEnumName] = true
-		}
-	}
-
-	delete(ta.inProgressInput, resolvedName)
-	delete(ta.inProgressOutput, resolvedName)
-}
-
 // MarkTypeReachableAsInput recursively marks a type and its dependencies as input-reachable.
 // This is used for RPC input types that need GraphQL input generation.
 func (ta *TypeAnalyzer) MarkTypeReachableAsInput(typeName string) {
@@ -385,51 +338,6 @@ func (ta *TypeAnalyzer) IsOutputReachable(typeName string) bool {
 
 		// Try suffix matching for nested types
 		suffix := "." + typeName
-		for reachableType := range ta.outputReachableTypes {
-			if len(reachableType) >= len(suffix) && reachableType[len(reachableType)-len(suffix):] == suffix {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
-// IsTypeReachable checks if a type is reachable in either input or output context.
-// For context-specific checks, use IsInputReachable or IsOutputReachable.
-func (ta *TypeAnalyzer) IsTypeReachable(typeName string) bool {
-	// Check both input and output reachable sets
-	if ta.inputReachableTypes[typeName] || ta.outputReachableTypes[typeName] {
-		return true
-	}
-
-	if len(typeName) > 0 && typeName[0] != '.' {
-		if ta.packageName != "" {
-			fullyQualified := "." + ta.packageName + "." + typeName
-			if ta.inputReachableTypes[fullyQualified] || ta.outputReachableTypes[fullyQualified] {
-				return true
-			}
-		}
-
-		for pkgName := range ta.packageNames {
-			if pkgName != "" && pkgName != ta.packageName {
-				fullyQualified := "." + pkgName + "." + typeName
-				if ta.inputReachableTypes[fullyQualified] || ta.outputReachableTypes[fullyQualified] {
-					return true
-				}
-			}
-		}
-
-		if ta.inputReachableTypes["."+typeName] || ta.outputReachableTypes["."+typeName] {
-			return true
-		}
-
-		suffix := "." + typeName
-		for reachableType := range ta.inputReachableTypes {
-			if len(reachableType) >= len(suffix) && reachableType[len(reachableType)-len(suffix):] == suffix {
-				return true
-			}
-		}
 		for reachableType := range ta.outputReachableTypes {
 			if len(reachableType) >= len(suffix) && reachableType[len(reachableType)-len(suffix):] == suffix {
 				return true
