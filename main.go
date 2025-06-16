@@ -11,6 +11,12 @@ import (
 )
 
 func main() {
+	// Handle --version flag
+	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
+		fmt.Printf("protoc-gen-graphql %s\n", internal.Version)
+		os.Exit(0)
+	}
+
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading proto: %v\n", err)

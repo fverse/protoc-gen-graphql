@@ -28,3 +28,5 @@ tmp
 /logs/codegen.log
 out
 protoc-gen-graphql
+protobuf-copy
+.kiro

@@ -4,7 +4,68 @@ A protoc plugin that generates GraphQL schema from Protocol Buffer (`.proto`) fi
 
 ## Installation
 
-### From Source
+### Homebrew (macOS/Linux)
+
+```bash
+brew install fverse/tap/protoc-gen-graphql
+```
+
+### Download Pre-built Binary
+
+Download the latest release for your platform from the [Releases page](https://github.com/fverse/protoc-graphql/releases).
+
+**Quick install script (macOS/Linux):**
+
+```bash
+# Auto-detect OS and architecture
+OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+ARCH=$(uname -m)
+[ "$ARCH" = "x86_64" ] && ARCH="amd64"
+[ "$ARCH" = "aarch64" ] && ARCH="arm64"
+
+VERSION=$(curl -s https://api.github.com/repos/fverse/protoc-graphql/releases/latest | grep tag_name | cut -d '"' -f 4)
+curl -L "https://github.com/fverse/protoc-graphql/releases/download/${VERSION}/protoc-gen-graphql-${OS}-${ARCH}" -o protoc-gen-graphql
+chmod +x protoc-gen-graphql
+sudo mv protoc-gen-graphql /usr/local/bin/
+```
+
+**Manual download:**
+
+```bash
+# macOS (Apple Silicon)
+curl -L https://github.com/fverse/protoc-graphql/releases/latest/download/protoc-gen-graphql-darwin-arm64 -o protoc-gen-graphql
+
+# macOS (Intel)
+curl -L https://github.com/fverse/protoc-graphql/releases/latest/download/protoc-gen-graphql-darwin-amd64 -o protoc-gen-graphql
+
+# Linux (amd64)
+curl -L https://github.com/fverse/protoc-graphql/releases/latest/download/protoc-gen-graphql-linux-amd64 -o protoc-gen-graphql
+
+# Linux (arm64)
+curl -L https://github.com/fverse/protoc-graphql/releases/latest/download/protoc-gen-graphql-linux-arm64 -o protoc-gen-graphql
+
+# Then make executable and move to PATH
+chmod +x protoc-gen-graphql
+sudo mv protoc-gen-graphql /usr/local/bin/
+```
+
+For Windows, download `protoc-gen-graphql-windows-amd64.exe` and add it to your PATH.
+
+**Verify checksums:**
+
+Each release includes a `checksums.txt` file. Verify your download:
+
+```bash
+sha256sum -c checksums.txt
+```
+
+### Install with Go
+
+```bash
+go install github.com/fverse/protoc-graphql@latest
+```
+
+### Build from Source
 
 ```bash
 git clone https://github.com/fverse/protoc-graphql.git
@@ -12,11 +73,8 @@ cd protoc-graphql
 go build -o protoc-gen-graphql
 ```
 
-Move the binary to your PATH or reference it directly in your protoc command.
-
 ### Prerequisites
 
-- Go 1.22.5 or later
 - Protocol Buffers compiler (`protoc`)
 
 ## Usage

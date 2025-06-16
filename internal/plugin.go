@@ -8,10 +8,10 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-const (
-	NAME    = "protoc-gen-graphql"
-	VERSION = "v0.1"
-)
+const NAME = "protoc-gen-graphql"
+
+// Version is set via ldflags at build time
+var Version = "dev"
 
 type Plugin struct {
 	Request  *pluginpb.CodeGeneratorRequest
@@ -44,7 +44,7 @@ func New(request *pluginpb.CodeGeneratorRequest) *Plugin {
 }
 
 func (p *Plugin) Version() string {
-	return NAME + " " + VERSION
+	return NAME + " " + Version
 }
 
 // Prints an error, and exits.

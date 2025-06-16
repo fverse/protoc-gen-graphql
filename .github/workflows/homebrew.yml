@@ -1,0 +1,18 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  homebrew:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Homebrew formula
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: protoc-gen-graphql
+          homebrew-tap: fverse/homebrew-tap
+          download-url: https://github.com/fverse/protoc-graphql/releases/download/${{ github.ref_name }}/protoc-gen-graphql-darwin-arm64
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}

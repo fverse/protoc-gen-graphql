@@ -1,0 +1,100 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+        run: |
+          EXT=""
+          if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
+          BINARY_NAME="protoc-gen-graphql-${GOOS}-${GOARCH}${EXT}"
+          go build -ldflags="-s -w -X github.com/fverse/protoc-graphql/internal.Version=${VERSION}" -o ${BINARY_NAME}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: protoc-gen-graphql-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: protoc-gen-graphql-*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate checksums
+        working-directory: artifacts
+        run: |
+          sha256sum protoc-gen-graphql-* > checksums.txt
+          cat checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/*
+          generate_release_notes: true
+          body: |
+            ## Installation
+
+            Download the binary for your platform and add it to your PATH.
+
+            ### Verify checksums
+            ```bash
+            sha256sum -c checksums.txt
+            ```
+
+            ### Quick install (macOS/Linux)
+            ```bash
+            # Detect OS and architecture
+            OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+            ARCH=$(uname -m)
+            [ "$ARCH" = "x86_64" ] && ARCH="amd64"
+            [ "$ARCH" = "aarch64" ] && ARCH="arm64"
+
+            curl -L https://github.com/fverse/protoc-graphql/releases/download/${{ github.ref_name }}/protoc-gen-graphql-${OS}-${ARCH} -o protoc-gen-graphql
+            chmod +x protoc-gen-graphql
+            sudo mv protoc-gen-graphql /usr/local/bin/
+            ```
