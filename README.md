@@ -4,12 +4,6 @@ A protoc plugin that generates GraphQL schema from Protocol Buffer (`.proto`) fi
 
 ## Installation
 
-### Homebrew (macOS/Linux)
-
-```bash
-brew install fverse/tap/protoc-gen-graphql
-```
-
 ### Download Pre-built Binary
 
 Download the latest release for your platform from the [Releases page](https://github.com/fverse/protoc-graphql/releases).
@@ -97,13 +91,13 @@ protoc --plugin=protoc-gen-graphql=./protoc-gen-graphql \
 
 ### Plugin Options
 
-| Option | Description | Example |
-|--------|-------------|---------|
-| `target` | Filter RPCs by target (e.g., `admin`, `client`, `internal`, `all`, `*`) | `target=client` |
-| `keep_case` | Preserve original field casing (default: converts to camelCase) | `keep_case` |
-| `keep_prefix` | Keep prefix in type names | `keep_prefix=true` |
-| `combine_output` | Combine all schemas into a single `schema.graphql` file | `combine_output` |
-| `all` | Generate schema for all files including imports | `all=true` |
+| Option           | Description                                                             | Example            |
+| ---------------- | ----------------------------------------------------------------------- | ------------------ |
+| `target`         | Filter RPCs by target (e.g., `admin`, `client`, `internal`, `all`, `*`) | `target=client`    |
+| `keep_case`      | Preserve original field casing (default: converts to camelCase)         | `keep_case`        |
+| `keep_prefix`    | Keep prefix in type names                                               | `keep_prefix=true` |
+| `combine_output` | Combine all schemas into a single `schema.graphql` file                 | `combine_output`   |
+| `all`            | Generate schema for all files including imports                         | `all=true`         |
 
 ### Example Command
 
@@ -185,7 +179,7 @@ service UserService {
   rpc GetUsers(Empty) returns (UsersResponse) {
     option (method) = { kind: "query" target: "*" };
   }
-  
+
   rpc CreateUser(CreateUserRequest) returns (User) {
     option (method) = { kind: "mutation" target: "admin" };
   }
@@ -220,17 +214,17 @@ type Mutation {
 
 ## Type Mapping
 
-| Proto Type | GraphQL Type |
-|------------|--------------|
-| `string` | `String` |
-| `int32`, `int64`, `sint32`, `sint64` | `Int` |
-| `float`, `double` | `Float` |
-| `bool` | `Boolean` |
-| `bytes` | `String` |
-| `enum` | `enum` |
-| `message` | `type` (output) / `input` (input) |
-| `repeated T` | `[T]` |
-| `optional T` | `T` (nullable) |
+| Proto Type                           | GraphQL Type                      |
+| ------------------------------------ | --------------------------------- |
+| `string`                             | `String`                          |
+| `int32`, `int64`, `sint32`, `sint64` | `Int`                             |
+| `float`, `double`                    | `Float`                           |
+| `bool`                               | `Boolean`                         |
+| `bytes`                              | `String`                          |
+| `enum`                               | `enum`                            |
+| `message`                            | `type` (output) / `input` (input) |
+| `repeated T`                         | `[T]`                             |
+| `optional T`                         | `T` (nullable)                    |
 
 ## Selective Type Generation
 
@@ -256,6 +250,7 @@ protoc --graphql_out=target=admin,combine_output:./out/admin ...
 # Generate all RPCs
 protoc --graphql_out=target=all,combine_output:./out/full ...
 ```
+
 ## License
 
 See [LICENSE](LICENSE) for details.
