@@ -20,7 +20,6 @@ ARCH=$(uname -m)
 VERSION=$(curl -s https://api.github.com/repos/fverse/protoc-graphql/releases/latest | grep tag_name | cut -d '"' -f 4)
 curl -L "https://github.com/fverse/protoc-graphql/releases/download/${VERSION}/protoc-gen-graphql-${OS}-${ARCH}" -o protoc-gen-graphql
 chmod +x protoc-gen-graphql
-sudo mv protoc-gen-graphql /usr/local/bin/
 ```
 
 **Manual download:**
