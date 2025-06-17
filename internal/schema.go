@@ -202,9 +202,20 @@ func getGqlInputParam(input *options.GqlInput) string {
 }
 
 func getGqlInputType(input *options.GqlInput, mi *string, packageName *string) *options.GqlInput {
+	// Extract the message type name without package prefix
+	messageType := strings.TrimPrefix(*mi, "."+*packageName+".")
+
 	if input == nil {
-		input = &options.GqlInput{
-			Type: "I" + strings.TrimPrefix(*mi, "."+*packageName+"."),
+		// Check if the message type is Empty
+		if messageType == "Empty" {
+			input = &options.GqlInput{
+				Type:  "Empty",
+				Empty: true,
+			}
+		} else {
+			input = &options.GqlInput{
+				Type: "I" + messageType,
+			}
 		}
 	} else if input.Type != "" {
 		parseType(input)
@@ -213,10 +224,16 @@ func getGqlInputType(input *options.GqlInput, mi *string, packageName *string) *
 		} else if input.Array {
 			input.Type = "[" + input.Type + "]"
 		} else {
-			input.Type = "I" + strings.TrimPrefix(*mi, "."+*packageName+".")
+			input.Type = "I" + messageType
 		}
 	} else {
-		input.Type = "I" + strings.TrimPrefix(*mi, "."+*packageName+".")
+		// Check if the message type is Empty
+		if messageType == "Empty" {
+			input.Type = "Empty"
+			input.Empty = true
+		} else {
+			input.Type = "I" + messageType
+		}
 	}
 
 	input.Param = getGqlInputParam(input)
@@ -303,6 +320,11 @@ func (schema *Schema) makeInputTypesWithPrefix(messages []*descriptorpb.Descript
 			}
 		} else {
 			fullName = prefix + "." + message.GetName()
+		}
+
+		// Check if the type is with zero fields, if so skip
+		if len(message.Field) == 0 {
+			continue
 		}
 
 		// Check if this type is INPUT-reachable before processing

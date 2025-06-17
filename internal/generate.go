@@ -111,7 +111,7 @@ func (schema *Schema) generateQueries() {
 
 	for _, query := range schema.queries {
 		if query.Input.Empty {
-			schema.Write(fmt.Sprintf("  %s: %s\n", utils.LowercaseFirst(*query.Name), *query.Payload))
+			schema.Write(fmt.Sprintf("  %s: %s!\n", utils.LowercaseFirst(*query.Name), *query.Payload))
 		} else {
 			if query.Input.Optional {
 				schema.Write(fmt.Sprintf("  %s(%s: %s): %s!\n", utils.LowercaseFirst(*query.Name),
