@@ -97,8 +97,14 @@ func (plugin *Plugin) generateCombinedOutput() {
 	}
 	combinedSchema.generate()
 
+	// Use custom output filename if provided, otherwise default to "schema.graphql"
+	outputFileName := "schema.graphql"
+	if len(plugin.args.OutputFileNames) > 0 {
+		outputFileName = plugin.args.OutputFileNames[0]
+	}
+
 	plugin.Response.File = append(plugin.Response.File, &pluginpb.CodeGeneratorResponse_File{
-		Name:    utils.String("schema.graphql"),
+		Name:    utils.String(outputFileName),
 		Content: utils.String(combinedSchema.String()),
 	})
 }
