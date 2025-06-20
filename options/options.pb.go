@@ -109,7 +109,7 @@ func (x *GqlInput) GetEmpty() bool {
 type MethodOptions struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Kind          string                 `protobuf:"bytes,50001,opt,name=kind,proto3" json:"kind,omitempty"`
-	Target        string                 `protobuf:"bytes,50002,opt,name=target,proto3" json:"target,omitempty"` // e.g., "admin", "client", "internal", "all"
+	Target        string                 `protobuf:"bytes,50002,opt,name=target,proto3" json:"target,omitempty"` // e.g., "internal". "*" for all
 	GqlInput      *GqlInput              `protobuf:"bytes,50003,opt,name=gql_input,json=gqlInput,proto3" json:"gql_input,omitempty"`
 	GqlOutput     string                 `protobuf:"bytes,50004,opt,name=gql_output,json=gqlOutput,proto3" json:"gql_output,omitempty"`
 	Skip          bool                   `protobuf:"varint,50005,opt,name=skip,proto3" json:"skip,omitempty"`
@@ -187,7 +187,7 @@ var file_options_options_proto_extTypes = []protoimpl.ExtensionInfo{
 		ExtendedType:  (*descriptor.MethodOptions)(nil),
 		ExtensionType: (*MethodOptions)(nil),
 		Field:         50000,
-		Name:          "dieture.method",
+		Name:          "method",
 		Tag:           "bytes,50000,opt,name=method",
 		Filename:      "options/options.proto",
 	},
@@ -195,7 +195,7 @@ var file_options_options_proto_extTypes = []protoimpl.ExtensionInfo{
 		ExtendedType:  (*descriptor.MessageOptions)(nil),
 		ExtensionType: (*bool)(nil),
 		Field:         50011,
-		Name:          "dieture.skip",
+		Name:          "skip",
 		Tag:           "varint,50011,opt,name=skip",
 		Filename:      "options/options.proto",
 	},
@@ -203,7 +203,7 @@ var file_options_options_proto_extTypes = []protoimpl.ExtensionInfo{
 		ExtendedType:  (*descriptor.FieldOptions)(nil),
 		ExtensionType: (*bool)(nil),
 		Field:         50021,
-		Name:          "dieture.required",
+		Name:          "required",
 		Tag:           "varint,50021,opt,name=required",
 		Filename:      "options/options.proto",
 	},
@@ -211,7 +211,7 @@ var file_options_options_proto_extTypes = []protoimpl.ExtensionInfo{
 		ExtendedType:  (*descriptor.FieldOptions)(nil),
 		ExtensionType: (*bool)(nil),
 		Field:         50022,
-		Name:          "dieture.keep_case",
+		Name:          "keep_case",
 		Tag:           "varint,50022,opt,name=keep_case",
 		Filename:      "options/options.proto",
 	},
@@ -219,7 +219,7 @@ var file_options_options_proto_extTypes = []protoimpl.ExtensionInfo{
 
 // Extension fields to descriptor.MethodOptions.
 var (
-	// optional dieture.MethodOptions method = 50000;
+	// optional MethodOptions method = 50000;
 	E_Method = &file_options_options_proto_extTypes[0]
 )
 
@@ -241,22 +241,22 @@ var File_options_options_proto protoreflect.FileDescriptor
 
 const file_options_options_proto_rawDesc = "" +
 	"\n" +
-	"\x15options/options.proto\x12\adieture\x1a google/protobuf/descriptor.proto\"\xa6\x01\n" +
+	"\x15options/options.proto\x1a google/protobuf/descriptor.proto\"\xa6\x01\n" +
 	"\bGqlInput\x12\x16\n" +
 	"\x05param\x18\xef\x86\x03 \x01(\tR\x05param\x12\x14\n" +
 	"\x04type\x18\xf0\x86\x03 \x01(\tR\x04type\x12\x1c\n" +
 	"\boptional\x18\xf1\x86\x03 \x01(\bR\boptional\x12\x1e\n" +
 	"\tprimitive\x18\xf2\x86\x03 \x01(\bR\tprimitive\x12\x16\n" +
 	"\x05array\x18\xf3\x86\x03 \x01(\bR\x05array\x12\x16\n" +
-	"\x05empty\x18\xf4\x86\x03 \x01(\bR\x05empty\"\xa8\x01\n" +
+	"\x05empty\x18\xf4\x86\x03 \x01(\bR\x05empty\"\xa0\x01\n" +
 	"\rMethodOptions\x12\x14\n" +
 	"\x04kind\x18ц\x03 \x01(\tR\x04kind\x12\x18\n" +
-	"\x06target\x18҆\x03 \x01(\tR\x06target\x120\n" +
-	"\tgql_input\x18ӆ\x03 \x01(\v2\x11.dieture.GqlInputR\bgqlInput\x12\x1f\n" +
+	"\x06target\x18҆\x03 \x01(\tR\x06target\x12(\n" +
+	"\tgql_input\x18ӆ\x03 \x01(\v2\t.GqlInputR\bgqlInput\x12\x1f\n" +
 	"\n" +
 	"gql_output\x18Ԇ\x03 \x01(\tR\tgqlOutput\x12\x14\n" +
-	"\x04skip\x18Ն\x03 \x01(\bR\x04skip:P\n" +
-	"\x06method\x12\x1e.google.protobuf.MethodOptions\x18І\x03 \x01(\v2\x16.dieture.MethodOptionsR\x06method:5\n" +
+	"\x04skip\x18Ն\x03 \x01(\bR\x04skip:H\n" +
+	"\x06method\x12\x1e.google.protobuf.MethodOptions\x18І\x03 \x01(\v2\x0e.MethodOptionsR\x06method:5\n" +
 	"\x04skip\x12\x1f.google.protobuf.MessageOptions\x18ۆ\x03 \x01(\bR\x04skip:>\n" +
 	"\brequired\x12\x1d.google.protobuf.FieldOptions\x18\xe5\x86\x03 \x01(\bR\brequired\x88\x01\x01:?\n" +
 	"\tkeep_case\x12\x1d.google.protobuf.FieldOptions\x18\xe6\x86\x03 \x01(\bR\bkeepCase\x88\x01\x01B\n" +
@@ -276,19 +276,19 @@ func file_options_options_proto_rawDescGZIP() []byte {
 
 var file_options_options_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_options_options_proto_goTypes = []any{
-	(*GqlInput)(nil),                  // 0: dieture.GqlInput
-	(*MethodOptions)(nil),             // 1: dieture.MethodOptions
+	(*GqlInput)(nil),                  // 0: GqlInput
+	(*MethodOptions)(nil),             // 1: MethodOptions
 	(*descriptor.MethodOptions)(nil),  // 2: google.protobuf.MethodOptions
 	(*descriptor.MessageOptions)(nil), // 3: google.protobuf.MessageOptions
 	(*descriptor.FieldOptions)(nil),   // 4: google.protobuf.FieldOptions
 }
 var file_options_options_proto_depIdxs = []int32{
-	0, // 0: dieture.MethodOptions.gql_input:type_name -> dieture.GqlInput
-	2, // 1: dieture.method:extendee -> google.protobuf.MethodOptions
-	3, // 2: dieture.skip:extendee -> google.protobuf.MessageOptions
-	4, // 3: dieture.required:extendee -> google.protobuf.FieldOptions
-	4, // 4: dieture.keep_case:extendee -> google.protobuf.FieldOptions
-	1, // 5: dieture.method:type_name -> dieture.MethodOptions
+	0, // 0: MethodOptions.gql_input:type_name -> GqlInput
+	2, // 1: method:extendee -> google.protobuf.MethodOptions
+	3, // 2: skip:extendee -> google.protobuf.MessageOptions
+	4, // 3: required:extendee -> google.protobuf.FieldOptions
+	4, // 4: keep_case:extendee -> google.protobuf.FieldOptions
+	1, // 5: method:type_name -> MethodOptions
 	6, // [6:6] is the sub-list for method output_type
 	6, // [6:6] is the sub-list for method input_type
 	5, // [5:6] is the sub-list for extension type_name

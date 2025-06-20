@@ -1,5 +1,4 @@
 syntax = "proto3";
-package dieture;
 
 option go_package = "/options";
 
